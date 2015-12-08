@@ -25,27 +25,27 @@ public class Thermostat extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_thermostat);
-        SeekBar seekBar = (SeekBar)findViewById(R.id.seekBar);
-        final TextView seekBarValue = (TextView)findViewById(R.id.tempSetting);
 
-        Button onButton = (Button)findViewById(R.id.thermostatOnButton);
-        onButton.setOnClickListener(new View.OnClickListener() {
+        //SeekBar for selecting thermostat values
+        SeekBar seekBar = (SeekBar) findViewById(R.id.seekBar);
+
+        //TextView for displaying SeekBar value
+        final TextView seekBarValue = (TextView) findViewById(R.id.tempSetting);
+
+        //Button sets thermostat value or turns off thermostat
+        final Button offButton = (Button) findViewById(R.id.thermostatOffButton);
+
+        Button setButton = (Button) findViewById(R.id.thermostatSetButton);
+
+        //Add Button Click Listener to monitor if button is clicked
+        offButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Button button=(Button) v;
+                Button button = (Button) v;
                 String currentText = button.getText().toString();
-                switch(currentText) {
-                    case "On":
-                        SocketTask task = new SocketTask();
-                        String responseStr = null;
-                        try {
-                            responseStr = (String) task.execute().get();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        }
-                        seekBarValue.setText(responseStr);
+                switch (currentText) {
+                    case "On": //Click Button To Turn Off Thermostat
+                        getTemperature();
                         button.setText("Off");
                         break;
                     case "Off":
@@ -54,6 +54,26 @@ public class Thermostat extends AppCompatActivity {
                     default:
                         button.setText("Error");
                 }
+            }
+        });
+
+        //Add Button Click Listener to monitor if button is clicked
+        setButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Button button = (Button) v;
+                String currentText = button.getText().toString();
+                SocketTask task = new SocketTask();
+                String responseStr = null;
+                try {
+                    responseStr = (String) task.execute().get();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+                seekBarValue.setText(responseStr);
+                offButton.setText("On"); //whenever you attempt to set a value the thermostat should be on
             }
         });
 
@@ -78,10 +98,6 @@ public class Thermostat extends AppCompatActivity {
         });
     }
 
-
-
-
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -104,15 +120,53 @@ public class Thermostat extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class SocketTask extends AsyncTask {
+    private void getTemperature() {
+
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    SocketTask task = new SocketTask();
+                    String responseStr = null;
+
+                    task.execute("getTemperature");
+
+
+                }
+            }
+        }).start();
+
+    }
+
+    private class getTemperatureClass extends AsyncTask<String, Void, String> {
 
         @Override
-        protected String doInBackground(Object[] params) {
+        protected String doInBackground(String... params) {
+            return "";
+        }
+
+        protected void onPostExecute(String result) {
+            TextView seekBarValue = (TextView) findViewById(R.id.tempSetting);
+            seekBarValue.setText(result);
+        }
+    }
+
+    private class SocketTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... uri) {
             Log.d("Here:", "Task happened");
             HttpURLConnection urlConnection = null;
 
             try {
-                URL url = new URL("http://192.168.0.166:8080");
+                URL url = new URL("http://192.168.1.121:8080/" + uri[0]);
+                Log.d("SocketTask:", "Attempting to connect to " + url.toString());
                 urlConnection = (HttpURLConnection) url.openConnection();
 
                 BufferedReader rd = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
@@ -124,32 +178,24 @@ public class Thermostat extends AppCompatActivity {
                 }
                 rd.close();
                 String responseStr = response.toString();
-                TextView seekBarValue = (TextView)findViewById(R.id.tempSetting);
+                TextView seekBarValue = (TextView) findViewById(R.id.tempSetting);
 
                 Log.d("Server Response", responseStr);
                 return responseStr;
             } catch (IOException e) {
                 e.printStackTrace();
+                Log.d("Exception", e.getMessage());
             } finally {
                 urlConnection.disconnect();
             }
 
-
-//        try {
-//            Socket socket = new Socket("192.168.0.166", 8080);
-//            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(1024);
-//            byte[] buffer = new byte[1024];
-//            int bytesRead;
-//            InputStream inputStream = socket.getInputStream();
-//            while ((bytesRead = inputStream.read(buffer)) != -1){
-//                byteArrayOutputStream.write(buffer,0,bytesRead);
-//                response += byteArrayOutputStream.toString("UTF-8");
-//            }
-//            Log.d("Here:", "We got something " + response);
-//        } catch (Exception e) {
-//            Log.d("Here:", "failed to create socket " + e.toString());
-//        }
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(String responseStr) {
+            TextView seekBarValue = (TextView) findViewById(R.id.tempSetting);
+            seekBarValue.setText(responseStr);
         }
 
     }
