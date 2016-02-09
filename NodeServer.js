@@ -16,8 +16,8 @@ dispatcher.onGet("/getTemperature", function(req, res) {
 	var PythonShell = require('python-shell');
 	var temp = 0;
 	PythonShell.run('readtemperature.py', function (err,results) {
-		console.log(results);
-		temp = results;
+		console.log(results[0]);
+		temp = results[0];
 		res.writeHead(200, {'Content-Type': 'text/plain'});
 		res.end(temp);
 		});
