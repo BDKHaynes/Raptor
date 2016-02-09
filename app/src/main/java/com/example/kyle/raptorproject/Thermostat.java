@@ -30,7 +30,7 @@ public class Thermostat extends AppCompatActivity {
         SeekBar seekBar = (SeekBar) findViewById(R.id.seekBar);
 
         //TextView for displaying SeekBar value
-        final TextView seekBarValue = (TextView) findViewById(R.id.tempSetting);
+        final TextView seekBarValue = (TextView) findViewById(R.id.goalTemp);
 
         //Button sets thermostat value or turns off thermostat
         final Button offButton = (Button) findViewById(R.id.thermostatOffButton);
@@ -45,7 +45,7 @@ public class Thermostat extends AppCompatActivity {
                 String currentText = button.getText().toString();
                 switch (currentText) {
                     case "On": //Click Button To Turn Off Thermostat
-                        getTemperature();
+
                         button.setText("Off");
                         break;
                     case "Off":
@@ -96,6 +96,8 @@ public class Thermostat extends AppCompatActivity {
                 // TODO Auto-generated method stub
             }
         });
+
+        getTemperature();
     }
 
     @Override
@@ -152,7 +154,7 @@ public class Thermostat extends AppCompatActivity {
         }
 
         protected void onPostExecute(String result) {
-            TextView seekBarValue = (TextView) findViewById(R.id.tempSetting);
+            TextView seekBarValue = (TextView) findViewById(R.id.currentTemp);
             seekBarValue.setText(result);
         }
     }
@@ -165,7 +167,7 @@ public class Thermostat extends AppCompatActivity {
             HttpURLConnection urlConnection = null;
 
             try {
-                URL url = new URL("http://192.168.1.121:8080/" + uri[0]);
+                URL url = new URL("http://192.168.1.123:8080/" + uri[0]);
                 Log.d("SocketTask:", "Attempting to connect to " + url.toString());
                 urlConnection = (HttpURLConnection) url.openConnection();
 
@@ -178,7 +180,7 @@ public class Thermostat extends AppCompatActivity {
                 }
                 rd.close();
                 String responseStr = response.toString();
-                TextView seekBarValue = (TextView) findViewById(R.id.tempSetting);
+                TextView seekBarValue = (TextView) findViewById(R.id.currentTemp);
 
                 Log.d("Server Response", responseStr);
                 return responseStr;
@@ -194,7 +196,7 @@ public class Thermostat extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String responseStr) {
-            TextView seekBarValue = (TextView) findViewById(R.id.tempSetting);
+            TextView seekBarValue = (TextView) findViewById(R.id.currentTemp);
             seekBarValue.setText(responseStr);
         }
 
