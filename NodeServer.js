@@ -3,7 +3,7 @@ var http = require('http');
 const PORT=8080;
 
 function handleRequest(request, response){
-	console.log("Handling request");
+	console.log(request.url);
 	dispatcher.dispatch(request,response);
 }
 function getRandomInt(min,max) {
@@ -12,9 +12,15 @@ function getRandomInt(min,max) {
 
 dispatcher.onGet("/getTemperature", function(req, res) {
 	console.log("Received Get Temperature Request");
-	res.writeHead(200, {'Content-Type': 'text/plain'});
-	var random = getRandomInt(70,80);
-	res.end(random.toString());
+
+	var PythonShell = require('python-shell');
+	var temp = 0;
+	PythonShell.run('readtemperature.py', function (err,results) {
+		console.log(results);
+		temp = results;
+		res.writeHead(200, {'Content-Type': 'text/plain'});
+		res.end(temp);
+		});
 });
 var server = http.createServer(handleRequest);
 server.listen(PORT, function(){
