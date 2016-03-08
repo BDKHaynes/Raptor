@@ -1,5 +1,6 @@
 var dispatcher = require('httpdispatcher');
 var http = require('http');
+var url = require('url');
 const PORT=8080;
 
 function handleRequest(request, response){
@@ -22,6 +23,13 @@ dispatcher.onGet("/getTemperature", function(req, res) {
 		res.end(temp);
 		});
 });
+
+dispatcher.onGet("/setTemperature", function(req, res) {
+        console.log("Received Set Temperature Request");
+	var queryData = url.parse(req.url, true).query;
+	console.log("Setting temperature to " + queryData.param);
+});
+
 var server = http.createServer(handleRequest);
 server.listen(PORT, function(){
 	console.log("Server listening on: http://localhost:%s", PORT);
