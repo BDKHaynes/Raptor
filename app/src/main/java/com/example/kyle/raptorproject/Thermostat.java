@@ -27,10 +27,10 @@ public class Thermostat extends AppCompatActivity {
         setContentView(R.layout.activity_thermostat);
 
         //SeekBar for selecting thermostat values
-        SeekBar seekBar = (SeekBar) findViewById(R.id.seekBar);
+        final SeekBar seekBar = (SeekBar) findViewById(R.id.seekBar);
 
         //TextView for displaying SeekBar value
-        final TextView seekBarValue = (TextView) findViewById(R.id.goalTemp);
+        final TextView goalTempView = (TextView) findViewById(R.id.goalTemp);
 
         //Button sets thermostat value or turns off thermostat
         final Button offButton = (Button) findViewById(R.id.thermostatOffButton);
@@ -62,17 +62,11 @@ public class Thermostat extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Button button = (Button) v;
-                String currentText = button.getText().toString();
-                SocketTask task = new SocketTask();
-                String responseStr = null;
-                try {
-                    responseStr = (String) task.execute().get();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
-                seekBarValue.setText(responseStr);
+                Integer goalTemp = seekBar.getProgress();
+
+                SetTemperatureTask task = new SetTemperatureTask();
+                task.execute("setTemperature", goalTemp.toString());
+
                 offButton.setText("On"); //whenever you attempt to set a value the thermostat should be on
             }
         });
@@ -83,7 +77,7 @@ public class Thermostat extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
                 // TODO Auto-generated method stub
-                seekBarValue.setText(String.valueOf(progress));
+                goalTempView.setText(String.valueOf(progress));
             }
 
             @Override
@@ -98,6 +92,7 @@ public class Thermostat extends AppCompatActivity {
         });
 
         getTemperature();
+        getGoalTemperature();
     }
 
     @Override
@@ -121,10 +116,13 @@ public class Thermostat extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+    private void getGoalTemperature(){
+        GetGoalTemperatureTask task = new GetGoalTemperatureTask();
+
+        task.execute("getGoalTemperature");
+    }
 
     private void getTemperature() {
-
-
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -134,29 +132,12 @@ public class Thermostat extends AppCompatActivity {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    SocketTask task = new SocketTask();
-                    String responseStr = null;
-
+                    GetTemperatureTask task = new GetTemperatureTask();
                     task.execute("getTemperature");
-
-
                 }
             }
         }).start();
 
-    }
-
-    private class getTemperatureClass extends AsyncTask<String, Void, String> {
-
-        @Override
-        protected String doInBackground(String... params) {
-            return "";
-        }
-
-        protected void onPostExecute(String result) {
-            TextView seekBarValue = (TextView) findViewById(R.id.currentTemp);
-            seekBarValue.setText(result);
-        }
     }
 
     private class SocketTask extends AsyncTask<String, Void, String> {
@@ -167,7 +148,12 @@ public class Thermostat extends AppCompatActivity {
             HttpURLConnection urlConnection = null;
 
             try {
-                URL url = new URL("http://192.168.1.123:8080/" + uri[0]);
+                String request = uri[0];
+                if (uri.length > 1) {
+                    request += "?param=" + uri[1];
+
+                }
+                URL url = new URL("http://192.168.1.123:8080/" + request);
                 Log.d("SocketTask:", "Attempting to connect to " + url.toString());
                 urlConnection = (HttpURLConnection) url.openConnection();
 
@@ -180,7 +166,6 @@ public class Thermostat extends AppCompatActivity {
                 }
                 rd.close();
                 String responseStr = response.toString();
-                TextView seekBarValue = (TextView) findViewById(R.id.currentTemp);
 
                 Log.d("Server Response", responseStr);
                 return responseStr;
@@ -193,12 +178,35 @@ public class Thermostat extends AppCompatActivity {
 
             return null;
         }
+    }
 
+    private class GetTemperatureTask extends SocketTask {
         @Override
         protected void onPostExecute(String responseStr) {
-            TextView seekBarValue = (TextView) findViewById(R.id.currentTemp);
-            seekBarValue.setText(responseStr);
+            TextView currentTemp = (TextView) findViewById(R.id.currentTemp);
+            currentTemp.setText(responseStr);
         }
+    }
 
+    private class SetTemperatureTask extends SocketTask {
+        @Override
+        protected void onPostExecute(String responseStr) {
+
+
+        }
+    }
+
+    private class GetGoalTemperatureTask extends SocketTask {
+        @Override
+        protected void onPostExecute(String responseStr) {
+            if (responseStr != null) {
+                TextView goalTemp = (TextView) findViewById(R.id.goalTemp);
+                goalTemp.setText(responseStr);
+                SeekBar seekBar = (SeekBar) findViewById(R.id.seekBar);
+                seekBar.setProgress(Integer.valueOf(responseStr));
+            }
+
+
+        }
     }
 }
