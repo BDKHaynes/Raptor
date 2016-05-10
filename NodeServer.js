@@ -47,7 +47,7 @@ dispatcher.onGet("/getTemperature", function(req, res) {
 			console.log(results[0]);
 			temperatureNameSpace.setCurrent(results[0]);
 		} else {
-			console.log("Error Reading Temperature Value");
+			console.log("Error Reading Temperature Value: " + err);
 		}
 		res.writeHead(200, {'Content-Type': 'text/plain'});
 		res.end(temperatureNameSpace.getCurrent());
@@ -59,6 +59,8 @@ dispatcher.onGet("/setTemperature", function(req, res) {
 	var queryData = url.parse(req.url, true).query;
 	temperatureNameSpace.setDesired(queryData.param);
 	console.log("Setting temperature to " + queryData.param);
+	res.writeHead(200, {'Content-Type': 'text/plain'});
+	res.end();
 });
 
 var server = http.createServer(handleRequest);
