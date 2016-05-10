@@ -1,12 +1,32 @@
 var dispatcher = require('httpdispatcher');
 var http = require('http');
 var url = require('url');
+var gpio = require("rpi-gpio");
 const PORT=8080;
+
+function ledOn(pin){
+	gpio.setup(pin, gpio.DIR_OUT, function(){
+		gpio.write(pin, 1, function(err){
+			if (err) throw err;
+			console.log('Turned pin on: ' + pin);
+		});
+	});
+}
+
+function ledOff(pin){
+	gpio.setup(pin, gpio.DIR_OUT, function(){
+		gpio.write(pin, 0, function(err){
+			if (err) throw err;
+			console.log('Turned pin off: ' + pin);
+		});
+	});
+}
 
 function handleRequest(request, response){
 	console.log(request.url);
 	dispatcher.dispatch(request,response);
 }
+
 function getRandomInt(min,max) {
 	return Math.floor(Math.random() * (max-min +1))+min;
 }
@@ -29,12 +49,30 @@ temperatureNameSpace = function() {
 var intervalVar = setInterval(periodicFunction, 5000);
 
 function periodicFunction() {
-	console.log((temperatureNameSpace.getDesired()));
-	console.log((temperatureNameSpace.getCurrent()));
-	if (parseFloat(temperatureNameSpace.getDesired()) < parseFloat(temperatureNameSpace.getCurrent())) {
+	var desiredTemperature = temperatureNameSpace.getDesired();
+	var currentTemperature = temperatureNameSpace.getCurrent();
+	
+	if (!desiredTemperature || !currentTemperature) {
+		console.log("Temperature not set");
+		ledOff(33);
+		ledOff(35);
+		return;
+	}
+
+	console.log("Desired temp: " + desiredTemperature);
+	console.log("Current temp: " + currentTemperature);
+	
+	if (parseFloat(desiredTemperature) < parseFloat(currentTemperature)) {
 		console.log("Lowering temperature to the desired set point");
-	} else {
+		ledOff(33);
+		ledOn(35);
+	} else if (parseFloat(desiredTemperature) > parseFloat(currentTemperature)) {
 		console.log("Raising temperature to the desired set point");
+		ledOff(35);
+		ledOn(33);
+	} else {
+		ledOff(33);
+		ledOff(35);
 	}
 }
 
