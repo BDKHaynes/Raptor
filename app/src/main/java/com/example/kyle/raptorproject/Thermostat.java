@@ -67,6 +67,7 @@ public class Thermostat extends AppCompatActivity {
                 SetTemperatureTask task = new SetTemperatureTask();
                 task.execute("setTemperature", goalTemp.toString());
 
+
                 offButton.setText("On"); //whenever you attempt to set a value the thermostat should be on
             }
         });
@@ -128,12 +129,13 @@ public class Thermostat extends AppCompatActivity {
             public void run() {
                 while (true) {
                     try {
+                        GetTemperatureTask task = new GetTemperatureTask();
+                        task.execute("getTemperature");
                         Thread.sleep(5000);
-                    } catch (InterruptedException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    GetTemperatureTask task = new GetTemperatureTask();
-                    task.execute("getTemperature");
+
                 }
             }
         }).start();
@@ -153,7 +155,7 @@ public class Thermostat extends AppCompatActivity {
                     request += "?param=" + uri[1];
 
                 }
-                URL url = new URL("http://192.168.1.123:8080/" + request);
+                URL url = new URL("http://192.168.1.124:8080/" + request);
                 Log.d("SocketTask:", "Attempting to connect to " + url.toString());
                 urlConnection = (HttpURLConnection) url.openConnection();
 
